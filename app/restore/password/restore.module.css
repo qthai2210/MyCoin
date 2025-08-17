@@ -1,0 +1,194 @@
+.container {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background-color: white;
+}
+
+.contentWrapper {
+  width: 100%;
+  max-width: 580px;
+  position: relative;
+}
+
+.backButton {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #333;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  margin-left: -8px;
+}
+
+.formContainer {
+  padding-top: 50px;
+  width: 100%;
+  text-align: left;
+}
+
+.heading {
+  font-size: 32px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.subtitle {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 32px;
+}
+
+.tabContainer {
+  display: flex;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.tabButton {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 12px 16px;
+  font-size: 16px;
+  color: #666;
+  cursor: pointer;
+  text-align: center;
+  position: relative;
+}
+
+.activeTab {
+  color: #3e7bfa;
+  font-weight: 500;
+}
+
+.activeTab::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #3e7bfa;
+}
+
+.formSection {
+  margin-bottom: 24px;
+}
+
+.label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.textArea {
+  width: 100%;
+  padding: 16px;
+  font-size: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  resize: none;
+}
+
+.textArea:focus {
+  outline: none;
+  border-color: #3e7bfa;
+}
+
+.fileUploadContainer {
+  margin-top: 8px;
+}
+
+.fileInput {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+
+.fileLabel {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  background-color: #f5f5f5;
+  color: #333;
+  text-align: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-weight: normal;
+}
+
+.fileLabel:hover {
+  background-color: #e8e8e8;
+}
+
+.inputContainer {
+  position: relative;
+  width: 100%;
+}
+
+.passwordInput {
+  width: 100%;
+  padding: 16px;
+  font-size: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding-right: 48px;
+}
+
+.passwordInput:focus {
+  outline: none;
+  border-color: #3e7bfa;
+}
+
+.toggleButton {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+}
+
+.divider {
+  height: 1px;
+  background-color: #e0e0e0;
+  width: 100%;
+  margin: 24px 0;
+}
+
+.restoreButton {
+  width: 100%;
+  padding: 16px;
+  background-color: #f2f2f2;
+  color: #888;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.restoreButton:not(:disabled) {
+  background-color: #3e7bfa;
+  color: white;
+}
+
+.restoreButton:not(:disabled):hover {
+  background-color: #3566d6;
+}

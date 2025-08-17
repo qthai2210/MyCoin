@@ -1,0 +1,18 @@
+<svg width="800" height="800" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+      <path d="M 50 0 L 0 0 0 50" fill="none" stroke="white" stroke-width="1"/>
+    </pattern>
+    <pattern id="dots" width="30" height="30" patternUnits="userSpaceOnUse">
+      <circle cx="5" cy="5" r="2" fill="white" />
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#grid)" />
+  <rect width="100%" height="100%" fill="url(#dots)" />
+  
+  <!-- Abstract shapes -->
+  <circle cx="200" cy="200" r="100" fill="white" opacity="0.03" />
+  <circle cx="600" cy="400" r="150" fill="white" opacity="0.02" />
+  <path d="M0,600 Q400,500 800,700" stroke="white" stroke-width="3" fill="none" opacity="0.03" />
+  <path d="M0,200 Q200,350 400,150 T800,300" stroke="white" stroke-width="2" fill="none" opacity="0.02" />
+</svg>

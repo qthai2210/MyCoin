@@ -1,0 +1,94 @@
+.optionCard {
+  background-color: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.optionCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.optionCard a {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.optionContent {
+  display: flex;
+  padding: 1.5rem;
+}
+
+.iconContainer {
+  margin-right: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.icon {
+  width: 48px;
+  height: 48px;
+}
+
+.textContent {
+  flex: 1;
+  text-align: left;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.title {
+  color: #333;
+  font-size: 1.1rem;
+  margin: 0;
+  margin-right: 0.5rem;
+}
+
+.officialBadge {
+  background-color: #4bd166;
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 1rem;
+}
+
+.notRecommended {
+  background-color: #ffcc00;
+  color: #333;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 1rem;
+  margin-left: auto;
+}
+
+.description {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* New styles for restore option */
+.restoreCard {
+  border: 2px solid #3e7bfa;
+  margin-top: 2rem;
+}
+
+.restoreOption {
+  background-color: rgba(62, 123, 250, 0.05);
+}
+
+.restoreBadge {
+  background-color: #3e7bfa;
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 1rem;
+}
