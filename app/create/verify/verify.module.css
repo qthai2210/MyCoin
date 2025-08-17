@@ -1,0 +1,135 @@
+.container {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background-color: white;
+}
+
+.logoHeader {
+  width: 100%;
+  max-width: 1200px;
+  padding: 20px;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.logo {
+  height: auto;
+}
+
+.card {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 500px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid #f0f0f0;
+}
+
+.cardHeader {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+}
+
+.backButton {
+  color: #333;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.content {
+  padding: 24px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 32px;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 24px;
+}
+
+.verifySection {
+  margin-bottom: 24px;
+}
+
+.selectPrompt {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.wordOptions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.wordButton {
+  flex: 1;
+  min-width: 120px;
+  padding: 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: white;
+  color: #333;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.wordButton:hover {
+  border-color: #7c41ff;
+  background-color: #f9f7ff;
+}
+
+.wordButton.selected {
+  border-color: #7c41ff;
+  background-color: #f9f7ff;
+  color: #7c41ff;
+  font-weight: 500;
+}
+
+.nextButton {
+  width: 100%;
+  padding: 16px;
+  background-color: #7c41ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: background-color 0.2s;
+}
+
+.nextButton:hover:not(.disabled) {
+  background-color: #6933ff;
+}
+
+.nextButton.disabled {
+  background-color: #f2f2f2;
+  color: #888;
+  cursor: not-allowed;
+}

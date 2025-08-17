@@ -101,7 +101,9 @@ export default function PasswordSetupPage() {
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={styles.passwordInput}
+                  className={`${styles.passwordInput} ${
+                    password ? styles.filled : ""
+                  }`}
                 />
                 <button
                   type="button"
@@ -161,7 +163,7 @@ export default function PasswordSetupPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className={`${styles.passwordInput} ${
                     !passwordsMatch ? styles.inputError : ""
-                  }`}
+                  } ${confirmPassword ? styles.filled : ""}`}
                 />
                 <button
                   type="button"

@@ -1,5 +1,6 @@
 .container {
   min-height: 100vh;
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -11,36 +12,111 @@
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  padding: 40px;
-  text-align: center;
-  max-width: 480px;
   width: 100%;
+  max-width: 650px;
+  overflow: hidden;
+}
+
+.cardHeader {
+  position: relative;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.backButton {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo {
+  display: flex;
+  justify-content: center;
+}
+
+.content {
+  padding: 24px;
 }
 
 .title {
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 700;
   color: #333;
   margin-bottom: 16px;
 }
 
-.message {
+.description {
   font-size: 16px;
-  color: #666;
+  color: #ff6b00;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.warning {
+  font-size: 16px;
+  color: #ff6b00;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.phraseGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
   margin-bottom: 32px;
 }
 
-.button {
-  display: inline-block;
+.phraseItem {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background-color: white;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+
+.phraseNumber {
+  color: #888;
+  font-size: 14px;
+  margin-right: 16px;
+  width: 20px;
+  text-align: right;
+}
+
+.phraseWord {
+  font-family: var(--font-geist-mono);
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
+}
+
+.nextButton {
+  width: 100%;
+  padding: 16px;
   background-color: #7c41ff;
   color: white;
-  padding: 12px 24px;
+  border: none;
   border-radius: 8px;
+  font-size: 16px;
   font-weight: 500;
-  text-decoration: none;
+  cursor: pointer;
   transition: background-color 0.2s;
 }
 
-.button:hover {
+.nextButton:hover {
   background-color: #6933ff;
+}
+
+@media (max-width: 500px) {
+  .phraseGrid {
+    grid-template-columns: 1fr;
+  }
 }
