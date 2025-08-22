@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { tempWalletStorage } from "@/services/tempWalletStorage";
 import styles from "./password.module.css";
 
 export default function PasswordSetupPage() {
@@ -12,16 +13,14 @@ export default function PasswordSetupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
-  // Handle client-side mounting to prevent hydration mismatch
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   // Check if passwords match whenever either password changes
   useEffect(() => {
+    setMounted(true);
     if (confirmPassword) {
       setPasswordsMatch(password === confirmPassword);
     } else {
@@ -29,11 +28,29 @@ export default function PasswordSetupPage() {
     }
   }, [password, confirmPassword]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password.trim().length > 0 && password === confirmPassword) {
-      // Store password securely or move to the next step
-      router.push("/create/success");
+      try {
+        setIsLoading(true);
+
+        // Generate a user ID (in a real app, this would come from authentication)
+        const userId = `user_${Date.now()}`;
+
+        // Generate a random passphrase for the wallet
+        const passphrase = tempWalletStorage.generatePassphrase();
+
+        // Store the data in temporary storage
+        tempWalletStorage.store(userId, passphrase, password);
+
+        // Redirect to show the recovery phrase
+        router.push("/create/success");
+      } catch (err) {
+        console.error("Error preparing wallet:", err);
+        setError(err instanceof Error ? err.message : "Unknown error occurred");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -85,8 +102,11 @@ export default function PasswordSetupPage() {
         <div className={styles.formContainer}>
           <h1 className={styles.heading}>Pick a password</h1>
           <p className={styles.subtitle}>
-            This will be used to unlock your wallet.
+            This will be used to unlock your wallet and protect your recovery
+            phrase.
           </p>
+
+          {error && <div className={styles.errorMessage}>Error: {error}</div>}
 
           <form onSubmit={handleSubmit}>
             {/* Password field */}
@@ -219,9 +239,9 @@ export default function PasswordSetupPage() {
             <button
               type="submit"
               className={styles.nextButton}
-              disabled={!isFormValid}
+              disabled={!isFormValid || isLoading}
             >
-              Next
+              {isLoading ? "Processing..." : "Next"}
             </button>
           </form>
 

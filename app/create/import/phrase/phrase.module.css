@@ -1,0 +1,146 @@
+.container {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background-color: white;
+  position: relative;
+}
+
+.logoHeader {
+  width: 100%;
+  max-width: 1200px;
+  padding: 20px;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.logo {
+  height: auto;
+}
+
+.contentWrapper {
+  width: 100%;
+  max-width: 520px;
+  position: relative;
+  z-index: 1;
+}
+
+.backButton {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #333;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  margin-left: -8px;
+}
+
+.formContainer {
+  padding: 40px;
+  padding-top: 50px;
+  width: 100%;
+  text-align: left;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f0f0f0;
+}
+
+.heading {
+  font-size: 32px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.subtitle {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 32px;
+}
+
+.inputContainer {
+  position: relative;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.textArea {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  resize: none;
+  font-family: sans-serif;
+}
+
+.textArea:focus {
+  outline: none;
+  border-color: #7c41ff;
+}
+
+.input {
+  width: 100%;
+  padding: 16px;
+  font-size: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #7c41ff;
+}
+
+.helperText {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #888;
+}
+
+.errorText {
+  color: #f44336;
+  font-size: 14px;
+  margin: -8px 0 16px;
+}
+
+.divider {
+  height: 1px;
+  background-color: #e0e0e0;
+  width: 100%;
+  margin: 24px 0;
+}
+
+.importButton {
+  width: 100%;
+  padding: 16px;
+  background-color: #7c41ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.importButton:hover {
+  background-color: #6933ff;
+}

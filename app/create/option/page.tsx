@@ -36,38 +36,35 @@ export default function WalletOptionsPage() {
 
         <div className={styles.optionsContainer}>
           <WalletOption
-            icon="/icons/browser-extension.svg"
-            title="Install Enkrypt browser extension"
-            description="MEW's official browser extension. Connect to web3 on Ethereum and Polygon, manage your NFTs, buy send and swap"
+            icon="/icons/passphrase.svg"
+            title="Generate new seed phrase"
+            description="Create a new wallet with a secure, randomly generated 12-word recovery phrase"
             official={true}
             linkTo="/create/password"
           />
 
           <WalletOption
-            icon="/icons/mobile-app.svg"
-            title="Download MEW wallet app"
-            description="Our official mobile app to create your wallet, and connect to MEW Web using your mobile phone"
-            official={true}
-            linkTo="/create/password"
+            icon="/icons/private-key.svg"
+            title="Import private key"
+            description="Import an existing wallet using your private key"
+            linkTo="/create/import/private-key"
           />
 
           <WalletOption
-            icon="/icons/hardware-wallet.svg"
-            title="Buy a hardware wallet"
-            description="For the highest standard of security, buy a hardware wallet and use it with MEW"
-            official={false}
-            linkTo="/create/password"
+            icon="/icons/recovery.svg"
+            title="Import recovery phrase"
+            description="Import an existing wallet using a 12 or 24-word recovery phrase"
+            linkTo="/create/import/phrase"
           />
 
           <WalletOption
-            icon="/icons/software-wallet.svg"
-            title="Software"
-            description="Software methods like Keystore File and Mnemonic Phrase should only be used in offline settings by experienced users"
-            official={false}
-            notRecommended={true}
-            linkTo="/create/password"
+            icon="/icons/json.svg"
+            title="Import JSON file"
+            description="Import a wallet from a JSON keystore file"
+            linkTo="/create/import/json"
           />
 
+          {/* Restore option with separator */}
           <WalletOption
             icon="/icons/restore-wallet.svg"
             title="Restore Existing Wallet"

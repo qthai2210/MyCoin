@@ -4,23 +4,30 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { tempWalletStorage } from "@/services/tempWalletStorage";
 import styles from "./success.module.css";
-import { generateRecoveryPhrase } from "@/utils/phraseGenerator";
 
 export default function SecretRecoveryPhrasePage() {
-  const [recoveryPhrase, setRecoveryPhrase] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [recoveryPhrase, setRecoveryPhrase] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
-    // Generate a 12-word recovery phrase
-    const phrase = generateRecoveryPhrase(12);
-    setRecoveryPhrase(phrase);
 
-    // In a real app, we would store this securely
-    // For demo purposes, we'll use sessionStorage
-    sessionStorage.setItem("recoveryPhrase", JSON.stringify(phrase));
+    // Get temporary wallet data
+    const tempData = tempWalletStorage.retrieve();
+
+    if (!tempData) {
+      setError(
+        "No wallet data found. Please restart the wallet creation process."
+      );
+      return;
+    }
+
+    // Split the passphrase into words
+    setRecoveryPhrase(tempData.passphrase.split(/\s+/));
   }, []);
 
   const handleNext = () => {
@@ -30,6 +37,20 @@ export default function SecretRecoveryPhrasePage() {
   // Return a loading state or empty div during SSR to avoid hydration issues
   if (!mounted) {
     return <div className={styles.container}></div>;
+  }
+
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.errorCard}>
+          <h2>Error</h2>
+          <p>{error}</p>
+          <Link href="/create/password" className={styles.errorButton}>
+            Try Again
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -67,7 +88,7 @@ export default function SecretRecoveryPhrasePage() {
           <h1 className={styles.title}>Secret recovery phrase</h1>
 
           <p className={styles.description}>
-            This is the recovery phase for your wallet. You and you alone have
+            This is the recovery phrase for your wallet. You and you alone have
             access to it. It can be used to restore your wallet.
           </p>
 
@@ -87,7 +108,7 @@ export default function SecretRecoveryPhrasePage() {
           </div>
 
           <button className={styles.nextButton} onClick={handleNext}>
-            Next
+            I've written it down
           </button>
         </div>
       </div>

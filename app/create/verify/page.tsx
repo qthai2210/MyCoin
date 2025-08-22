@@ -1,53 +1,54 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { tempWalletStorage } from "@/services/tempWalletStorage";
+import { useWallet } from "@/context/WalletContext";
 import styles from "./verify.module.css";
-import { generateRecoveryPhrase } from "@/utils/phraseGenerator";
 
 export default function VerifyPhrasePage() {
-  const [recoveryPhrase, setRecoveryPhrase] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [recoveryPhrase, setRecoveryPhrase] = useState<string[]>([]);
   const [selectedWords, setSelectedWords] = useState<Record<number, string>>(
     {}
   );
   const [wordOptions, setWordOptions] = useState<Record<number, string[]>>({});
   const [positionsToVerify, setPositionsToVerify] = useState<number[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+
   const router = useRouter();
+  const { createWallet, error: walletError } = useWallet();
 
   useEffect(() => {
     setMounted(true);
 
-    // In a real app, we would retrieve the saved phrase
-    let phrase: string[] = [];
+    // Get temporary wallet data
+    const tempData = tempWalletStorage.retrieve();
 
-    try {
-      // Try to get the phrase from session storage
-      const storedPhrase = sessionStorage.getItem("recoveryPhrase");
-      if (storedPhrase) {
-        phrase = JSON.parse(storedPhrase);
-      } else {
-        // Fallback to generating a new phrase if not found
-        phrase = generateRecoveryPhrase(12);
-      }
-    } catch (e) {
-      // If there's any error, generate a new phrase as fallback
-      phrase = generateRecoveryPhrase(12);
+    if (!tempData) {
+      setError(
+        "No wallet data found. Please restart the wallet creation process."
+      );
+      return;
     }
 
-    setRecoveryPhrase(phrase);
+    // Split the passphrase into words
+    const phraseArray = tempData.passphrase.split(/\s+/);
+    setRecoveryPhrase(phraseArray);
 
-    // Select 4 random positions from the 12-word phrase
-    const positions = selectRandomPositions(phrase.length, 4);
+    // Select random positions from the phrase to verify (4 positions)
+    const positions = selectRandomPositions(phraseArray.length, 4);
     setPositionsToVerify(positions);
 
     // Generate options for each position (one correct, two random)
     const options: Record<number, string[]> = {};
     positions.forEach((position) => {
-      const correctWord = phrase[position];
-      const otherWords = generateRandomWords(phrase, correctWord);
+      const correctWord = phraseArray[position];
+      const otherWords = generateRandomWords(phraseArray, correctWord);
 
       // Shuffle the options
       options[position] = shuffleArray([
@@ -76,9 +77,47 @@ export default function VerifyPhrasePage() {
     phrase: string[],
     excludeWord: string
   ): string[] => {
-    const wordList = require("@/utils/phraseGenerator").wordList;
-    const result: string[] = [];
+    // This is a simplified version - in a real app, you'd use a larger wordlist
+    const wordList = [
+      "abandon",
+      "ability",
+      "able",
+      "about",
+      "above",
+      "absent",
+      "absorb",
+      "abstract",
+      "absurd",
+      "abuse",
+      "access",
+      "accident",
+      "account",
+      "accuse",
+      "achieve",
+      "acid",
+      "acoustic",
+      "acquire",
+      "across",
+      "act",
+      "action",
+      "actor",
+      "actress",
+      "actual",
+      "adapt",
+      "add",
+      "addict",
+      "address",
+      "adjust",
+      "admit",
+      "adult",
+      "advance",
+      "zebra",
+      "zero",
+      "zone",
+      "zoo",
+    ];
 
+    const result: string[] = [];
     while (result.length < 2) {
       const randomIndex = Math.floor(Math.random() * wordList.length);
       const word = wordList[randomIndex];
@@ -127,21 +166,61 @@ export default function VerifyPhrasePage() {
     );
   };
 
-  const handleNext = () => {
-    if (areAllWordsCorrect()) {
-      router.push("/dashboard");
-    } else {
-      // Show error if words don't match
-      alert(
+  const handleSubmit = async () => {
+    if (!areAllWordsCorrect()) {
+      setError(
         "The selected words don't match your recovery phrase. Please try again."
       );
+      return;
+    }
+
+    // Get temporary wallet data
+    const tempData = tempWalletStorage.retrieve();
+
+    if (!tempData) {
+      setError(
+        "No wallet data found. Please restart the wallet creation process."
+      );
+      return;
+    }
+
+    setIsCreating(true);
+
+    try {
+      // Now create the actual wallet with the API
+      await createWallet(tempData.userId, tempData.passphrase);
+
+      // Clear the temporary data
+      tempWalletStorage.clear();
+
+      // Navigate to the dashboard
+      router.push("/dashboard");
+    } catch (err) {
+      console.error("Failed to create wallet:", err);
+      setError("Failed to create wallet. Please try again.");
+    } finally {
+      setIsCreating(false);
     }
   };
 
-  if (!mounted || recoveryPhrase.length === 0) {
+  if (!mounted) {
     return (
       <div className={styles.container}>
         <div className={styles.card}></div>
+      </div>
+    );
+  }
+
+  if (error || walletError) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.errorCard}>
+          <h2>Error</h2>
+          <p>{error || walletError}</p>
+          <Link href="/create/success" className={styles.errorButton}>
+            Back to Recovery Phrase
+          </Link>
+        </div>
       </div>
     );
   }
@@ -182,7 +261,7 @@ export default function VerifyPhrasePage() {
         </div>
 
         <div className={styles.content}>
-          <h1 className={styles.title}>Let's double check it</h1>
+          <h1 className={styles.title}>Let&apos;s verify your phrase</h1>
           <p className={styles.subtitle}>
             Select the correct words from your recovery phrase
           </p>
@@ -214,10 +293,10 @@ export default function VerifyPhrasePage() {
             className={`${styles.nextButton} ${
               isAllSelected() ? "" : styles.disabled
             }`}
-            onClick={handleNext}
-            disabled={!isAllSelected()}
+            onClick={handleSubmit}
+            disabled={!isAllSelected() || isCreating}
           >
-            Next
+            {isCreating ? "Creating Wallet..." : "Create Wallet"}
           </button>
         </div>
       </div>
