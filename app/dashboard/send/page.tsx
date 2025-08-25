@@ -93,6 +93,7 @@ export default function SendPage() {
         alert("Transaction successfully sent!");
         router.push("/dashboard");
       } else {
+        console.log("Transaction failed", error);
         setFormError("Transaction failed. Please try again.");
         setIsConfirmStep(false);
       }

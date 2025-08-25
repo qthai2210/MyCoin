@@ -15,7 +15,7 @@ interface WalletContextType {
   transactions: Transaction[];
   isLoading: boolean;
   error: string | null;
-  createWallet: (userId: string, passphrase?: string) => Promise<void>;
+  createWallet: (userId: string, passphrase?: string) => Promise<Wallet>; // Fix return type to match implementation
   loadWallet: (address: string) => Promise<void>;
   loadWalletWithPrivateKey: (address: string) => Promise<void>;
   refreshWalletStats: () => Promise<void>;
@@ -38,15 +38,20 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     const storedWallet = localStorage.getItem("wallet");
     if (storedWallet) {
       try {
-        const parsedWallet = JSON.parse(storedWallet);
+        const parsedWallet = JSON.parse(storedWallet) as Wallet;
+        // Validate minimal required wallet properties
+        if (!parsedWallet.address) {
+          throw new Error("Invalid wallet data in localStorage");
+        }
         setWallet(parsedWallet);
         // Load wallet stats if we have an address
-        if (parsedWallet?.address) {
+        if (parsedWallet.address) {
           loadWalletStats(parsedWallet.address);
           loadTransactionHistoryByAddress(parsedWallet.address);
         }
       } catch (err) {
         console.error("Failed to parse wallet from localStorage:", err);
+        localStorage.removeItem("wallet"); // Remove invalid data
       }
     }
   }, []);
@@ -67,15 +72,27 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const loadTransactionHistoryByAddress = async (address: string) => {
     try {
+      // Log the request for debugging
+      console.log(`Fetching transaction history for address: ${address}`);
+
       const history = await api.getTransactionHistory(address);
       setTransactions(history);
     } catch (err) {
       console.error("Failed to load transaction history:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unknown error loading transaction history"
-      );
+
+      // If the API returns 404, it might mean no transactions yet rather than an error
+      if (err instanceof Error && err.message.includes("Not Found")) {
+        console.log("No transaction history found, using empty array");
+        setTransactions([]);
+        // Don't set error for 404 - it's a valid state for new wallets
+      } else {
+        // For other errors, update the error state
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unknown error loading transaction history"
+        );
+      }
     }
   };
 
@@ -83,13 +100,34 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      const newWallet = await api.createWallet(userId, passphrase);
+      const response = await api.createWallet(userId, passphrase);
+
+      // Extract complete wallet data from the response
+      const newWallet = response.data;
+
+      // Set the complete wallet object with all available fields
       setWallet(newWallet);
+
+      // Use more detailed wallet stats from the response
       setWalletStats({
         address: newWallet.address,
-        balance: 100, // Assuming new wallets start with 100 coins
+        balance: newWallet.balance,
+        network: newWallet.network,
+        createdAt: newWallet.createdAt,
+        status: newWallet.status,
+        hasPrivateKey: newWallet.hasPrivateKey,
+        qrCode: newWallet.qrCode,
+        links: newWallet.links,
       });
-      // Save wallet to localStorage
+
+      // Log additional info for user if available
+      if (newWallet.passphrase) {
+        console.info(
+          "A recovery passphrase has been generated. Please save it securely."
+        );
+      }
+
+      // Save complete wallet data to localStorage
       localStorage.setItem("wallet", JSON.stringify(newWallet));
       return newWallet;
     } catch (err) {
@@ -145,7 +183,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const loadTransactionHistory = async () => {
     if (!wallet?.address) return;
-    await loadTransactionHistoryByAddress(wallet.address);
+
+    try {
+      await loadTransactionHistoryByAddress(wallet.address);
+    } catch (err) {
+      console.error("Error in loadTransactionHistory:", err);
+      // Already handled in loadTransactionHistoryByAddress
+    }
   };
 
   const sendCoins = async (toAddress: string, amount: number) => {
@@ -154,17 +198,33 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
+    console.log("Sending coins:", { toAddress, amount });
     setIsLoading(true);
     setError(null);
+
     try {
-      await api.sendCoins(wallet.address, toAddress, amount, wallet.privateKey);
+      const response = await api.sendCoins(
+        wallet.address,
+        toAddress,
+        amount,
+        wallet.privateKey
+      );
+
+      // Log success response
+      console.log("Transaction successful:", response);
+
       // Refresh wallet stats and transaction history
       await refreshWalletStats();
       await loadTransactionHistory();
       return true;
     } catch (err) {
+      console.error("Transaction failed:", err);
+
+      // Provide more specific error message
       setError(
-        err instanceof Error ? err.message : "Unknown error sending coins"
+        err instanceof Error
+          ? err.message
+          : "Transaction failed. Please try again."
       );
       return false;
     } finally {
