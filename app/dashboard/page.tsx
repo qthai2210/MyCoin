@@ -15,12 +15,12 @@ export default function DashboardPage() {
     wallet,
     walletStats,
     transactions,
-    blockchainTransactions, // Get blockchain transactions
+    blockchainTransactions,
     isLoading,
     error,
     refreshWalletStats,
     loadTransactionHistory,
-    loadBlockchainTransactions, // Get the new function
+    loadBlockchainTransactions,
   } = useWallet();
 
   // Use blockchain transactions for display
@@ -35,6 +35,9 @@ export default function DashboardPage() {
       refreshWalletStats();
       // Load blockchain transactions instead of user's transactions
       loadBlockchainTransactions();
+
+      // Also load user's transaction history
+      loadTransactionHistory();
     }
   }, [wallet?.address]);
 
@@ -61,6 +64,20 @@ export default function DashboardPage() {
         .catch((err) => {
           console.error("Error refreshing blockchain transactions:", err);
           setIsLoading(false);
+        });
+    }
+  };
+
+  // Function to refresh personal transaction history
+  const handleRefreshHistory = () => {
+    if (wallet?.address) {
+      console.log("Refreshing personal transaction history");
+      loadTransactionHistory()
+        .then(() => {
+          console.log("Transaction history refresh complete");
+        })
+        .catch((err) => {
+          console.error("Error refreshing transaction history:", err);
         });
     }
   };
@@ -98,6 +115,14 @@ export default function DashboardPage() {
               onClick={() => setActiveTab("overview")}
             >
               Overview
+            </button>
+            <button
+              className={`${styles.tab} ${
+                activeTab === "history" ? styles.active : ""
+              }`}
+              onClick={() => setActiveTab("history")}
+            >
+              History
             </button>
             <button
               className={`${styles.tab} ${
@@ -341,6 +366,17 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {activeTab === "history" && (
+          <div className={styles.tabContent}>
+            <TransactionHistoryView
+              transactions={transactions}
+              walletAddress={wallet.address}
+              isLoading={isLoading}
+              onRefresh={handleRefreshHistory}
+            />
+          </div>
+        )}
+
         {activeTab === "send" && (
           <div className={styles.tabContent}>
             <div className={styles.redirectMessage}>
@@ -358,6 +394,128 @@ export default function DashboardPage() {
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+// Transaction History View Component
+function TransactionHistoryView({
+  transactions,
+  walletAddress,
+  isLoading,
+  onRefresh,
+}: {
+  transactions: any[];
+  walletAddress: string;
+  isLoading: boolean;
+  onRefresh: () => void;
+}) {
+  return (
+    <div className={styles.formCard}>
+      <div className={styles.transactionsHeader}>
+        <h2 className={styles.formTitle}>Transaction History</h2>
+        <button
+          onClick={onRefresh}
+          className={styles.refreshButton}
+          title="Refresh transaction history"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M2 8C2 11.3137 4.68629 14 8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+            <path d="M8 5L5 2L8 5Z" fill="currentColor" />
+            <path
+              d="M8 5L5 2M5 2L2 5M5 2"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+          Refresh
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className={styles.loadingState}>
+          <p>Loading transaction history...</p>
+        </div>
+      ) : transactions.length === 0 ? (
+        <div className={styles.emptyState}>
+          <p>No transaction history found</p>
+          <p className={styles.emptyStateSubtext}>
+            Your personal transactions will appear here once you send or receive
+            MYC
+          </p>
+          <button onClick={onRefresh} className={styles.refreshEmptyButton}>
+            Refresh History
+          </button>
+        </div>
+      ) : (
+        <div className={styles.transactionsTable}>
+          {transactions.map((tx) => {
+            // Determine if transaction is incoming or outgoing
+            const isIncoming =
+              tx.toAddress?.toLowerCase() === walletAddress.toLowerCase();
+            return (
+              <div
+                key={tx.transactionId || tx._id || tx.id || tx.hash}
+                className={`${styles.transactionRow} ${
+                  isIncoming ? styles.incomingTx : styles.outgoingTx
+                }`}
+              >
+                <div className={styles.txIconCol}>
+                  <div
+                    className={`${styles.txTypeIcon} ${
+                      isIncoming ? styles.incomingIcon : styles.outgoingIcon
+                    }`}
+                  >
+                    {isIncoming ? "↓" : "↑"}
+                  </div>
+                </div>
+                <div className={styles.txHashCol}>
+                  <div className={styles.txType}>
+                    {isIncoming ? "Received" : "Sent"}
+                  </div>
+                  <div className={styles.txTime}>
+                    {new Date(tx.timestamp).toLocaleString()}
+                  </div>
+                </div>
+                <div className={styles.txDetailsCol}>
+                  <div className={styles.txAddressLine}>
+                    <span className={styles.txAddressLabel}>
+                      {isIncoming ? "From" : "To"}
+                    </span>
+                    <a href="#" className={styles.txAddress}>
+                      {formatAddress(
+                        isIncoming ? tx.fromAddress : tx.toAddress || ""
+                      )}
+                    </a>
+                  </div>
+                </div>
+                <div className={styles.txAmountCol}>
+                  <div
+                    className={`${styles.txAmount} ${
+                      isIncoming ? styles.incomingAmount : styles.outgoingAmount
+                    }`}
+                  >
+                    {isIncoming ? "+" : "-"}
+                    {tx.amount} MYC
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
