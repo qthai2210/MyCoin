@@ -38,15 +38,30 @@ export interface WalletStats {
 }
 
 export interface Transaction {
-  id: string;
+  _id: string;
   fromAddress: string;
   toAddress: string;
   amount: number;
+  type: string;
+  hash: string;
+  status: string;
   timestamp: string;
-  status: "pending" | "confirmed" | "failed";
-  hash?: string;
-  blockNumber?: number;
-  fee?: number;
+  // These are added for UI compatibility
+  id?: string;
+  transactionId?: string;
+}
+
+// Define pagination response interface
+export interface PaginationInfo {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+
+export interface BlockchainTransactionsResponse {
+  transactions: Transaction[];
+  pagination: PaginationInfo;
 }
 
 interface ApiResponse<T> {
@@ -116,21 +131,92 @@ export const api = {
     }
   },
 
-  // Get transaction history
-  async getTransactionHistory(address: string): Promise<Transaction[]> {
+  // Get all blockchain transactions
+  getAllBlockchainTransactions: async (
+    page = 1,
+    limit = 10
+  ): Promise<BlockchainTransactionsResponse> => {
     try {
+      console.log(
+        `Fetching blockchain transactions, page ${page}, limit ${limit}`
+      );
       const response = await fetch(
-        `${API_BASE_URL}/wallets/${address}/transactions`
+        `${API_BASE_URL}/transactions/blockchain?page=${page}&limit=${limit}`
       );
 
       if (!response.ok) {
+        throw new Error(
+          `Failed to get blockchain transactions: ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("Blockchain transactions API response:", data);
+
+      // Extract transactions from the response
+      const transactions = data.data.transactions || [];
+
+      // Add UI helper fields to transactions if needed
+      const formattedTransactions = transactions.map((tx: any) => ({
+        ...tx,
+        id: tx._id || tx.id || tx.transactionId || tx.hash,
+        transactionId: tx._id || tx.id || tx.transactionId || tx.hash,
+      }));
+
+      return {
+        transactions: formattedTransactions,
+        pagination: data.data.pagination || { total: 0, page, limit, pages: 1 },
+      };
+    } catch (error) {
+      console.error("API error getting blockchain transactions:", error);
+      throw error;
+    }
+  },
+
+  // Get transaction history for a specific wallet
+  getTransactionHistory: async (address: string): Promise<Transaction[]> => {
+    try {
+      console.log(`Fetching transaction history for: ${address}`);
+      const response = await fetch(
+        `${API_BASE_URL}/transactions/${address}/history`
+      );
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log("No transaction history found, using empty array");
+          return [];
+        }
         throw new Error(
           `Failed to get transaction history: ${response.statusText}`
         );
       }
 
       const data = await response.json();
-      return data.data;
+      console.log("Transaction history response:", data);
+
+      // Check if we have transactions in the expected structure
+      const transactions = data.data.transactions || data.data || [];
+
+      if (transactions.length === 0) {
+        console.log("No transactions found in response");
+      } else {
+        console.log(`Found ${transactions.length} transactions`);
+      }
+
+      // Map the transactions to the expected format
+      return transactions.map((tx: any) => {
+        // Ensure we have consistent IDs across different response structures
+        const id = tx._id || tx.id || tx.transactionId || tx.hash;
+
+        // Add derived UI fields
+        return {
+          ...tx,
+          id: id,
+          transactionId: id,
+          // For UI, determine if this is incoming or outgoing relative to the wallet
+          type: tx.fromAddress === address ? "outgoing" : "incoming",
+        };
+      });
     } catch (error) {
       console.error("API error getting transaction history:", error);
       throw error;

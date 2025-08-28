@@ -147,21 +147,205 @@
 
 .transactionsCard {
   background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+}
+
+.transactionsHeader {
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .sectionTitle {
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 500;
   color: #333;
-  margin-bottom: 16px;
+  margin: 0;
+}
+
+.customizeButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #3b82f6;
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.customizeButton:hover {
+  color: #2563eb;
+}
+
+.transactionsTable {
+  width: 100%;
+  max-height: 500px;
+  overflow-y: auto;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.transactionRow {
+  display: grid;
+  grid-template-columns: 40px 1fr 2fr 80px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  align-items: center;
+}
+
+.transactionRow:last-child {
+  border-bottom: none;
+}
+
+.transactionActions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.refreshButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.refreshButton:hover {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.refreshEmptyButton {
+  margin-top: 12px;
+  padding: 8px 16px;
+  background-color: #f3f4f6;
+  border: none;
+  border-radius: 6px;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.refreshEmptyButton:hover {
+  background-color: #e5e7eb;
+}
+
+/* ...existing styles... */
+
+.txIconCol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.documentIcon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+}
+
+.txHashCol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.txHash {
+  color: #3b82f6;
+  font-family: monospace;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.txHash:hover {
+  text-decoration: underline;
+}
+
+.txTime {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.txDetailsCol {
+  padding: 0 12px;
+}
+
+.txAddressLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.txAddressLabel {
+  color: #6b7280;
+  min-width: 40px;
+}
+
+.txAddress {
+  color: #3b82f6;
+  font-family: monospace;
+  text-decoration: none;
+}
+
+.txAddress:hover {
+  text-decoration: underline;
+}
+
+.txAmountCol {
+  text-align: right;
+}
+
+.txAmount {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.viewAllContainer {
+  padding: 16px;
+  text-align: center;
+  border-top: 1px solid #f0f0f0;
+}
+
+.viewAllLink {
+  color: #3b82f6;
+  font-size: 14px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.viewAllLink:hover {
+  text-decoration: underline;
 }
 
 .emptyState {
   text-align: center;
   color: #888;
   padding: 32px 0;
+}
+
+.emptyStateSubtext {
+  color: #6b7280;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.loadingState {
+  padding: 24px;
+  text-align: center;
+  color: #6b7280;
 }
 
 .transactionsList {
@@ -431,4 +615,49 @@
   border-radius: 8px;
   text-decoration: none;
   font-weight: 500;
+}
+
+.viewAllContainer {
+  margin-top: 16px;
+  text-align: center;
+  padding: 8px;
+  border-top: 1px solid #eaeaea;
+}
+
+.viewAllButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b82f6;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s;
+  padding: 8px;
+}
+
+.viewAllButton:hover {
+  color: #2563eb;
+  background-color: #f3f4f6;
+  border-radius: 8px;
+}
+
+.viewAllIcon {
+  margin-left: 4px;
+  height: 16px;
+  width: 16px;
+}
+
+.viewAllButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .viewAllButtons {
+    flex-direction: row;
+    justify-content: center;
+    gap: 16px;
+  }
 }

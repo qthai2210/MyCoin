@@ -15,11 +15,17 @@ export default function DashboardPage() {
     wallet,
     walletStats,
     transactions,
+    blockchainTransactions, // Get blockchain transactions
     isLoading,
     error,
     refreshWalletStats,
     loadTransactionHistory,
+    loadBlockchainTransactions, // Get the new function
   } = useWallet();
+
+  // Use blockchain transactions for display
+  const displayTransactions =
+    blockchainTransactions.length > 0 ? blockchainTransactions : [];
 
   useEffect(() => {
     setMounted(true);
@@ -27,9 +33,37 @@ export default function DashboardPage() {
     // Refresh data when dashboard loads
     if (wallet?.address) {
       refreshWalletStats();
-      loadTransactionHistory();
+      // Load blockchain transactions instead of user's transactions
+      loadBlockchainTransactions();
     }
   }, [wallet?.address]);
+
+  // Debug - log transactions to see what's available
+  useEffect(() => {
+    if (displayTransactions.length > 0) {
+      console.log(
+        `Loaded ${displayTransactions.length} blockchain transactions:`,
+        displayTransactions
+      );
+    }
+  }, [displayTransactions]);
+
+  // Function to handle transaction refresh with better debugging
+  const handleRefreshTransactions = () => {
+    if (wallet?.address) {
+      console.log("Manually refreshing blockchain transactions");
+      setIsLoading(true);
+      loadBlockchainTransactions()
+        .then(() => {
+          console.log("Blockchain transaction refresh complete");
+          setIsLoading(false);
+        })
+        .catch((err) => {
+          console.error("Error refreshing blockchain transactions:", err);
+          setIsLoading(false);
+        });
+    }
+  };
 
   if (!mounted) {
     return null;
@@ -118,7 +152,7 @@ export default function DashboardPage() {
 
         {error && <div className={styles.errorMessage}>Error: {error}</div>}
 
-        {activeTab === "overview" && !isLoading && (
+        {activeTab === "overview" && (
           <div className={styles.overviewContent}>
             <div className={styles.balanceCard}>
               <h2 className={styles.balanceLabel}>Your Balance</h2>
@@ -153,48 +187,155 @@ export default function DashboardPage() {
             </div>
 
             <div className={styles.transactionsCard}>
-              <h3 className={styles.sectionTitle}>Recent Transactions</h3>
-              {transactions.length === 0 ? (
+              <div className={styles.transactionsHeader}>
+                <h3 className={styles.sectionTitle}>Blockchain Transactions</h3>
+                <div className={styles.transactionActions}>
+                  <button
+                    onClick={handleRefreshTransactions}
+                    className={styles.refreshButton}
+                    title="Refresh blockchain transactions"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M2 8C2 11.3137 4.68629 14 8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                      <path d="M8 5L5 2L8 5Z" fill="currentColor" />
+                      <path
+                        d="M8 5L5 2M5 2L2 5M5 2"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
+                  <button className={styles.customizeButton}>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M8 10C9.10457 10 10 9.10457 10 8C10 6.89543 9.10457 6 8 6C6.89543 6 6 6.89543 6 8C6 9.10457 6.89543 10 8 10Z"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      />
+                      <path
+                        d="M13.5 8C13.5 8 11.5 12 8 12C4.5 12 2.5 8 2.5 8C2.5 8 4.5 4 8 4C11.5 4 13.5 8 13.5 8Z"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      />
+                    </svg>
+                    Customize
+                  </button>
+                </div>
+              </div>
+
+              {isLoading ? (
+                <div className={styles.loadingState}>
+                  <p>Loading blockchain transactions...</p>
+                </div>
+              ) : displayTransactions.length === 0 ? (
                 <div className={styles.emptyState}>
-                  <p>No transactions yet</p>
+                  <p>No blockchain transactions yet</p>
+                  <p className={styles.emptyStateSubtext}>
+                    Blockchain transaction history will appear here
+                  </p>
+                  <button
+                    onClick={handleRefreshTransactions}
+                    className={styles.refreshEmptyButton}
+                  >
+                    Refresh Blockchain
+                  </button>
                 </div>
               ) : (
-                <div className={styles.transactionsList}>
-                  {transactions.map((tx) => (
-                    <div key={tx.id} className={styles.transactionItem}>
-                      <div className={styles.transactionIcon}>
-                        {tx.fromAddress === wallet.address ? "↑" : "↓"}
+                <>
+                  <div className={styles.transactionsTable}>
+                    {displayTransactions.slice(0, 10).map((tx) => (
+                      <div
+                        key={tx._id || tx.id || tx.hash || tx.transactionId}
+                        className={styles.transactionRow}
+                      >
+                        <div className={styles.txIconCol}>
+                          <div className={styles.documentIcon}>
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 16 16"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M4 14H12C13.1046 14 14 13.1046 14 12V4C14 2.89543 13.1046 2 12 2H4C2.89543 2 2 2.89543 2 4V12C2 13.1046 2.89543 14 4 14Z"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                              />
+                              <path
+                                d="M5 7H11"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                              />
+                              <path
+                                d="M5 10H9"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                              />
+                            </svg>
+                          </div>
+                        </div>
+                        <div className={styles.txHashCol}>
+                          <a href="#" className={styles.txHash}>
+                            {(
+                              tx.hash ||
+                              tx.id ||
+                              tx.transactionId ||
+                              ""
+                            ).substring(0, 10)}
+                            ...
+                          </a>
+                          <div className={styles.txTime}>
+                            {new Date(tx.timestamp).toLocaleString()}
+                          </div>
+                        </div>
+                        <div className={styles.txDetailsCol}>
+                          <div className={styles.txAddressLine}>
+                            <span className={styles.txAddressLabel}>From</span>
+                            <a href="#" className={styles.txAddress}>
+                              {formatAddress(tx.fromAddress || "")}
+                            </a>
+                          </div>
+                          <div className={styles.txAddressLine}>
+                            <span className={styles.txAddressLabel}>To</span>
+                            <a href="#" className={styles.txAddress}>
+                              {formatAddress(tx.toAddress || "")}
+                            </a>
+                          </div>
+                        </div>
+                        <div className={styles.txAmountCol}>
+                          <div className={styles.txAmount}>{tx.amount} MYC</div>
+                        </div>
                       </div>
-                      <div className={styles.transactionInfo}>
-                        <div className={styles.transactionType}>
-                          {tx.fromAddress === wallet.address
-                            ? "Sent"
-                            : "Received"}
-                        </div>
-                        <div className={styles.transactionAddress}>
-                          {tx.fromAddress === wallet.address
-                            ? `To: ${formatAddress(tx.toAddress)}`
-                            : `From: ${formatAddress(tx.fromAddress)}`}
-                        </div>
-                      </div>
-                      <div className={styles.transactionAmount}>
-                        <div
-                          className={`${styles.amount} ${
-                            tx.fromAddress === wallet.address
-                              ? styles.negative
-                              : styles.positive
-                          }`}
-                        >
-                          {tx.fromAddress === wallet.address ? "-" : "+"}
-                          {tx.amount} MYC
-                        </div>
-                        <div className={styles.timestamp}>
-                          {new Date(tx.timestamp).toLocaleDateString()}
-                        </div>
-                      </div>
+                    ))}
+                  </div>
+
+                  {displayTransactions.length > 10 && (
+                    <div className={styles.viewAllContainer}>
+                      <Link href="/explorer" className={styles.viewAllLink}>
+                        VIEW BLOCKCHAIN EXPLORER →
+                      </Link>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -254,3 +395,28 @@ function ReceiveView({ address }: { address: string }) {
     </div>
   );
 }
+
+//           QR Code for {formatAddress(address)}
+//         </div>
+//       </div>
+
+//       <div className={styles.addressContainer}>
+//         <p className={styles.addressLabel}>Your MyCoin Address</p>
+//         <div className={styles.addressValue}>
+//           {address}
+//           <button
+//             className={styles.copyFullButton}
+//             onClick={() => navigator.clipboard.writeText(address)}
+//           >
+//             Copy
+//           </button>
+//         </div>
+//       </div>
+
+//       <p className={styles.receiveInfo}>
+//         Share your address to receive MYC and other tokens compatible with the
+//         MyCoin network.
+//       </p>
+//     </div>
+//   );
+// }

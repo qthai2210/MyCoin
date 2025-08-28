@@ -22,6 +22,8 @@ interface WalletContextType {
   loadTransactionHistory: () => Promise<void>;
   sendCoins: (toAddress: string, amount: number) => Promise<boolean>;
   clearWallet: () => void;
+  blockchainTransactions: Transaction[];
+  loadBlockchainTransactions: () => Promise<void>;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -30,6 +32,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [walletStats, setWalletStats] = useState<WalletStats | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [blockchainTransactions, setBlockchainTransactions] = useState<
+    Transaction[]
+  >([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -109,13 +114,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setWallet(newWallet);
 
       // Use more detailed wallet stats from the response
+      // Ensure all required number fields have fallback values
       setWalletStats({
         address: newWallet.address,
-        balance: newWallet.balance,
+        balance: newWallet.balance ?? 0, // Provide fallback of 0 if balance is undefined
         network: newWallet.network,
         createdAt: newWallet.createdAt,
         status: newWallet.status,
-        hasPrivateKey: newWallet.hasPrivateKey,
+        hasPrivateKey: newWallet.hasPrivateKey ?? false, // Add fallback for boolean properties
         qrCode: newWallet.qrCode,
         links: newWallet.links,
       });
@@ -239,6 +245,28 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("wallet");
   };
 
+  const loadBlockchainTransactions = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      console.log("Loading all blockchain transactions");
+      const response = await api.getAllBlockchainTransactions();
+      setBlockchainTransactions(response.transactions);
+      console.log(
+        `Loaded ${response.transactions.length} blockchain transactions`
+      );
+    } catch (err) {
+      console.error("Failed to load blockchain transactions:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unknown error loading blockchain transactions"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const value = {
     wallet,
     walletStats,
@@ -252,6 +280,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     loadTransactionHistory,
     sendCoins,
     clearWallet,
+    blockchainTransactions,
+    loadBlockchainTransactions,
   };
 
   return (
