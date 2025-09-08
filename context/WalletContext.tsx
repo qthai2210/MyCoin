@@ -7,7 +7,14 @@ import {
   useEffect,
   ReactNode,
 } from "react";
-import { api, Wallet, WalletStats, Transaction } from "@/services/api";
+import {
+  api,
+  Wallet,
+  WalletStats,
+  Transaction,
+  MiningStatus,
+  Block,
+} from "@/services/api";
 
 interface WalletContextType {
   wallet: Wallet | null;
@@ -15,7 +22,7 @@ interface WalletContextType {
   transactions: Transaction[];
   isLoading: boolean;
   error: string | null;
-  createWallet: (userId: string, passphrase?: string) => Promise<Wallet>; // Fix return type to match implementation
+  createWallet: (userId: string, passphrase?: string) => Promise<Wallet>;
   loadWallet: (address: string) => Promise<void>;
   loadWalletWithPrivateKey: (address: string) => Promise<void>;
   refreshWalletStats: () => Promise<void>;
@@ -24,6 +31,14 @@ interface WalletContextType {
   clearWallet: () => void;
   blockchainTransactions: Transaction[];
   loadBlockchainTransactions: () => Promise<void>;
+  // Add mining related properties and methods
+  miningStatus: MiningStatus | null;
+  getMiningStatus: () => Promise<void>;
+  setMiningAddress: (address: string) => Promise<void>;
+  setMiningDifficulty: (difficulty: number) => Promise<void>;
+  startMining: () => Promise<void>;
+  stopMining: () => Promise<void>;
+  mineBlock: (minerAddress?: string) => Promise<Block>;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -37,6 +52,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   >([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  // Add mining status state
+  const [miningStatus, setMiningStatus] = useState<MiningStatus | null>(null);
 
   // Try to load wallet from localStorage on mount
   useEffect(() => {
@@ -267,6 +284,138 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Mining related methods
+  const getMiningStatus = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await api.getMiningStatus();
+      setMiningStatus(response.data);
+    } catch (err) {
+      console.error("Failed to get mining status:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unknown error getting mining status"
+      );
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const setMiningAddress = async (address: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await api.setMiningAddress(address);
+      await getMiningStatus(); // Refresh mining status
+    } catch (err) {
+      console.error("Failed to set mining address:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unknown error setting mining address"
+      );
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const setMiningDifficulty = async (difficulty: number) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await api.setMiningDifficulty(difficulty);
+      await getMiningStatus(); // Refresh mining status
+    } catch (err) {
+      console.error("Failed to set mining difficulty:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unknown error setting mining difficulty"
+      );
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const startMining = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await api.startMining();
+      await getMiningStatus(); // Refresh mining status
+    } catch (err) {
+      console.error("Failed to start mining:", err);
+      setError(
+        err instanceof Error ? err.message : "Unknown error starting mining"
+      );
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const stopMining = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await api.stopMining();
+      await getMiningStatus(); // Refresh mining status
+    } catch (err) {
+      console.error("Failed to stop mining:", err);
+      setError(
+        err instanceof Error ? err.message : "Unknown error stopping mining"
+      );
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const mineBlock = async (minerAddress?: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Use the provided minerAddress or the current wallet address
+      const address = minerAddress || wallet?.address;
+
+      if (!address) {
+        throw new Error("No mining address provided or wallet not loaded");
+      }
+
+      const result = await api.mineBlock(address);
+
+      // Refresh wallet stats and transaction history after mining
+      if (wallet?.address) {
+        await loadWalletStats(wallet.address);
+        await loadTransactionHistoryByAddress(wallet.address);
+      }
+
+      return result.data;
+    } catch (err) {
+      console.error("Failed to mine block:", err);
+      setError(
+        err instanceof Error ? err.message : "Unknown error mining block"
+      );
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Try to get mining status on mount
+  useEffect(() => {
+    // Don't show errors for mining status if it fails - it might not be implemented yet
+    api
+      .getMiningStatus()
+      .then((response) => setMiningStatus(response.data))
+      .catch((err) => console.log("Mining status not available:", err));
+  }, []);
+
   const value = {
     wallet,
     walletStats,
@@ -282,6 +431,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     clearWallet,
     blockchainTransactions,
     loadBlockchainTransactions,
+    // Add mining related properties and methods
+    miningStatus,
+    getMiningStatus,
+    setMiningAddress,
+    setMiningDifficulty,
+    startMining,
+    stopMining,
+    mineBlock,
   };
 
   return (

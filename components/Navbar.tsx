@@ -29,6 +29,9 @@ const Navbar: React.FC = () => {
               Products <span className={styles.arrow}>▼</span>
             </a>
           </div>
+          <Link href="/mining" className="text-blue-500 hover:text-blue-700">
+            Mining
+          </Link>
         </div>
 
         <div className={styles.walletBtn}>

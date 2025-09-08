@@ -64,6 +64,22 @@ export interface BlockchainTransactionsResponse {
   pagination: PaginationInfo;
 }
 
+// Mining-related types
+export interface MiningStatus {
+  mining: boolean;
+  difficulty: number;
+  miningAddress?: string;
+}
+
+export interface Block {
+  timestamp: number;
+  transactions: Transaction[];
+  previousHash: string;
+  index: number;
+  nonce: number;
+  hash: string;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -256,6 +272,180 @@ export const api = {
       return result.data; // Return the data portion of the response
     } catch (error) {
       console.error("API error sending coins:", error);
+      throw error;
+    }
+  },
+
+  // Mining-related API methods
+  setMiningAddress: async (
+    address: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: { address: string };
+  }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/mining/address`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address }),
+      });
+
+      if (response.status === 404) {
+        throw new Error(
+          "Mining API not available - this feature may not be implemented yet"
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to set mining address: ${response.statusText}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error("Error setting mining address:", error);
+      throw error;
+    }
+  },
+
+  getMiningStatus: async (): Promise<{
+    success: boolean;
+    data: MiningStatus;
+  }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/mining/status`);
+
+      if (response.status === 404) {
+        throw new Error(
+          "Mining API not available - this feature may not be implemented yet"
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to get mining status: ${response.statusText}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error("Error getting mining status:", error);
+      throw error;
+    }
+  },
+
+  setMiningDifficulty: async (
+    difficulty: number
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: { difficulty: number };
+  }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/mining/difficulty`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ difficulty }),
+      });
+
+      if (response.status === 404) {
+        throw new Error(
+          "Mining API not available - this feature may not be implemented yet"
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to set mining difficulty: ${response.statusText}`
+        );
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error("Error setting mining difficulty:", error);
+      throw error;
+    }
+  },
+
+  startMining: async (): Promise<{
+    success: boolean;
+    message: string;
+    data: { mining: boolean };
+  }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/mining/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      if (response.status === 404) {
+        throw new Error(
+          "Mining API not available - this feature may not be implemented yet"
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to start mining: ${response.statusText}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error("Error starting mining:", error);
+      throw error;
+    }
+  },
+
+  stopMining: async (): Promise<{
+    success: boolean;
+    message: string;
+    data: { mining: boolean };
+  }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/mining/stop`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      if (response.status === 404) {
+        throw new Error(
+          "Mining API not available - this feature may not be implemented yet"
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to stop mining: ${response.statusText}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error("Error stopping mining:", error);
+      throw error;
+    }
+  },
+
+  mineBlock: async (
+    minerAddress: string
+  ): Promise<{ success: boolean; message: string; data: Block }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/mining/mine-block`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ minerAddress }),
+      });
+
+      if (response.status === 404) {
+        throw new Error(
+          "Mining API not available - this feature may not be implemented yet"
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to mine block: ${response.statusText}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error("Error mining block:", error);
       throw error;
     }
   },
