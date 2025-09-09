@@ -8,28 +8,15 @@ import { formatAddress } from "@/utils/formatter";
 import { useWallet } from "@/context/WalletContext";
 import styles from "./send.module.css";
 
-type FeeOption = {
-  name: string;
-  speed: string;
-  fee: number;
-};
-
 export default function SendPage() {
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
-  const [selectedFee, setSelectedFee] = useState<string>("average");
   const [isConfirmStep, setIsConfirmStep] = useState(false);
   const [formError, setFormError] = useState("");
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
   const { wallet, walletStats, isLoading, error, sendCoins } = useWallet();
-
-  const feeOptions: Record<string, FeeOption> = {
-    slow: { name: "Slow", speed: "~30 min", fee: 1 },
-    average: { name: "Average", speed: "~5 min", fee: 3 },
-    fast: { name: "Fast", speed: "~1 min", fee: 5 },
-  };
 
   useEffect(() => {
     setMounted(true);
@@ -70,8 +57,7 @@ export default function SendPage() {
       return false;
     }
 
-    const totalAmount = parsedAmount + feeOptions[selectedFee].fee;
-    if (totalAmount > walletStats.balance) {
+    if (parsedAmount > walletStats.balance) {
       setFormError("Insufficient balance for this transaction");
       return false;
     }
@@ -114,8 +100,7 @@ export default function SendPage() {
   };
 
   const setMaxAmount = () => {
-    const maxAmount = walletStats.balance - feeOptions[selectedFee].fee;
-    setAmount(maxAmount > 0 ? maxAmount.toString() : "0");
+    setAmount(walletStats.balance.toString());
   };
 
   return (
@@ -273,27 +258,6 @@ export default function SendPage() {
               </div>
             </div>
 
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Network Fee</label>
-              <div className={styles.feeOptions}>
-                {Object.entries(feeOptions).map(([key, option]) => (
-                  <div
-                    key={key}
-                    className={`${styles.feeOption} ${
-                      selectedFee === key ? styles.selectedFee : ""
-                    }`}
-                    onClick={() => setSelectedFee(key)}
-                  >
-                    <div className={styles.feeOptionHeader}>
-                      <span className={styles.feeName}>{option.name}</span>
-                      <span className={styles.feeSpeed}>{option.speed}</span>
-                    </div>
-                    <div className={styles.feeValue}>{option.fee} MYC</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {formError && (
               <div className={styles.errorMessage}>{formError}</div>
             )}
@@ -334,22 +298,12 @@ export default function SendPage() {
                 <div className={styles.detailValue}>{amount} MYC</div>
               </div>
 
-              <div className={styles.confirmDetail}>
-                <div className={styles.detailLabel}>Network Fee</div>
-                <div className={styles.detailValue}>
-                  {feeOptions[selectedFee].fee} MYC
-                </div>
-              </div>
-
               <div className={styles.divider}></div>
 
               <div className={styles.totalAmount}>
                 <div className={styles.totalLabel}>Total Amount</div>
                 <div className={styles.totalValue}>
-                  {(parseFloat(amount) + feeOptions[selectedFee].fee).toFixed(
-                    2
-                  )}{" "}
-                  MYC
+                  {parseFloat(amount).toFixed(2)} MYC
                 </div>
               </div>
             </div>

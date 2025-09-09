@@ -4,7 +4,9 @@
  */
 export function formatAddress(address: string): string {
   if (!address || address.length < 10) return address;
-  return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  return `${address.substring(0, 6)}...${address.substring(
+    address.length - 4
+  )}`;
 }
 
 /**
@@ -13,6 +15,6 @@ export function formatAddress(address: string): string {
 export function formatAmount(amount: number): string {
   return amount.toLocaleString(undefined, {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 6
+    maximumFractionDigits: 6,
   });
 }

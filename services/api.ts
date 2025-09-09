@@ -78,6 +78,11 @@ export interface Block {
   index: number;
   nonce: number;
   hash: string;
+  miningStats?: {
+    difficulty: number;
+    timeInSeconds: string;
+    reward: number;
+  };
 }
 
 interface ApiResponse<T> {

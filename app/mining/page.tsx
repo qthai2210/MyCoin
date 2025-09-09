@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { useWallet } from "@/context/WalletContext";
 import Link from "next/link";
 import styles from "./mining.module.css";
+import { Transaction } from "@/services/api";
 
 export default function MiningPage() {
   const {
     wallet,
+    walletStats,
     miningStatus,
     getMiningStatus,
     setMiningAddress,
@@ -17,6 +19,9 @@ export default function MiningPage() {
     mineBlock,
     isLoading,
     error,
+    transactions,
+    refreshWalletStats,
+    loadTransactionHistory,
   } = useWallet();
 
   const [customAddress, setCustomAddress] = useState("");
@@ -27,6 +32,13 @@ export default function MiningPage() {
     null
   );
   const [localError, setLocalError] = useState<string | null>(null);
+  const [isDifficultyChanged, setIsDifficultyChanged] = useState(false);
+  const [showDifficultyInfo, setShowDifficultyInfo] = useState(false);
+
+  // Filter mining transactions
+  const miningTransactions = transactions.filter(
+    (tx) => tx.type === "MINING_REWARD" || tx.fromAddress === null
+  );
 
   // Fix: Remove getMiningStatus from the dependency array to prevent infinite loop
   useEffect(() => {
@@ -35,6 +47,12 @@ export default function MiningPage() {
         await getMiningStatus();
         setMiningApiAvailable(true);
         setLocalError(null);
+
+        // Also load wallet stats and transaction history when checking mining API
+        if (wallet?.address) {
+          await refreshWalletStats();
+          await loadTransactionHistory();
+        }
       } catch (err) {
         setMiningApiAvailable(false);
         const errorMsg = err instanceof Error ? err.message : "Unknown error";
@@ -73,12 +91,29 @@ export default function MiningPage() {
     try {
       await setMiningDifficulty(difficulty);
       setOperationMessage("Mining difficulty updated successfully!");
+      setIsDifficultyChanged(false);
       setTimeout(() => setOperationMessage(""), 3000);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Unknown error";
       setOperationMessage(`Error: ${errorMsg}`);
       setTimeout(() => setOperationMessage(""), 5000);
     }
+  };
+
+  // Add the missing setDifficultyPreset function
+  const setDifficultyPreset = (level: "easy" | "medium" | "hard") => {
+    switch (level) {
+      case "easy":
+        setDifficulty(2);
+        break;
+      case "medium":
+        setDifficulty(4);
+        break;
+      case "hard":
+        setDifficulty(6);
+        break;
+    }
+    setIsDifficultyChanged(true);
   };
 
   const handleStartMining = async () => {
@@ -88,8 +123,18 @@ export default function MiningPage() {
       setTimeout(() => setOperationMessage(""), 3000);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Unknown error";
-      setOperationMessage(`Error: ${errorMsg}`);
-      setTimeout(() => setOperationMessage(""), 5000);
+
+      // Check for specific internal server error
+      if (errorMsg.includes("Internal Server Error")) {
+        setOperationMessage(
+          "Failed to start mining: Server error. The mining node might be unavailable or experiencing issues."
+        );
+      } else {
+        setOperationMessage(`Error: ${errorMsg}`);
+      }
+
+      // Show error message for longer time
+      setTimeout(() => setOperationMessage(""), 8000);
     }
   };
 
@@ -118,6 +163,13 @@ export default function MiningPage() {
       const result = await mineBlock(addressToUse);
       setMiningResult(result);
       setOperationMessage("Block mined successfully!");
+
+      // Refresh wallet stats and transactions to see mining rewards
+      if (wallet?.address) {
+        await refreshWalletStats();
+        await loadTransactionHistory();
+      }
+
       setTimeout(() => setOperationMessage(""), 3000);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Unknown error";
@@ -383,7 +435,7 @@ export default function MiningPage() {
               </svg>
               <p>
                 Mining requires significant computational resources and can
-                affect your system's performance.
+                affect your system is performance.
               </p>
             </div>
           </div>
@@ -468,7 +520,8 @@ export default function MiningPage() {
       {operationMessage && (
         <div
           className={`${styles.messageBox} ${
-            operationMessage.startsWith("Error")
+            operationMessage.startsWith("Error") ||
+            operationMessage.startsWith("Failed")
               ? styles.errorBox
               : operationMessage.includes("wait")
               ? styles.infoBox
@@ -486,7 +539,8 @@ export default function MiningPage() {
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            {operationMessage.startsWith("Error") ? (
+            {operationMessage.startsWith("Error") ||
+            operationMessage.startsWith("Failed") ? (
               <>
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
@@ -506,10 +560,134 @@ export default function MiningPage() {
             )}
           </svg>
           {operationMessage}
+          {(operationMessage.includes("Internal Server Error") ||
+            operationMessage.includes("Server error")) && (
+            <div className={styles.errorDetails}>
+              <p>This could be caused by:</p>
+              <ul>
+                <li>The mining server is not running</li>
+                <li>The server has resource constraints</li>
+                <li>There are issues with the blockchain node</li>
+              </ul>
+              <p>Try again later or contact the system administrator.</p>
+            </div>
+          )}
         </div>
       )}
 
       <div className={styles.contentGrid}>
+        {/* New wallet balance card */}
+        <div className={styles.card}>
+          <h2 className={styles.cardTitle}>
+            <svg
+              className={styles.cardTitleIcon}
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="8" r="7" />
+              <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+            </svg>
+            Mining Rewards
+          </h2>
+          <div className={styles.cardContent}>
+            <div className={styles.walletStatsGrid}>
+              <div className={styles.walletStatItem}>
+                <div className={styles.walletStatHeader}>
+                  <span className={styles.walletStatLabel}>
+                    Current Balance
+                  </span>
+                  <button
+                    onClick={refreshWalletStats}
+                    className={styles.refreshIconButton}
+                    title="Refresh balance"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+                    </svg>
+                  </button>
+                </div>
+                <div className={styles.walletStatValue}>
+                  {walletStats?.balance || 0}
+                  <span className={styles.currencyUnit}>MYC</span>
+                </div>
+              </div>
+
+              <div className={styles.walletStatItem}>
+                <div className={styles.walletStatHeader}>
+                  <span className={styles.walletStatLabel}>Mining Rewards</span>
+                  <span className={styles.rewardsBadge}>
+                    +
+                    {miningTransactions.reduce((sum, tx) => sum + tx.amount, 0)}{" "}
+                    MYC
+                  </span>
+                </div>
+                <div className={styles.rewardsInfo}>
+                  <span className={styles.rewardsCount}>
+                    {miningTransactions.length} mining rewards received
+                  </span>
+                  {miningTransactions.length > 0 && (
+                    <span className={styles.rewardsDate}>
+                      Latest:{" "}
+                      {new Date(
+                        miningTransactions[0]?.timestamp || Date.now()
+                      ).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.miningAddressInfo}>
+              <div className={styles.miningAddressHeader}>
+                <span className={styles.miningAddressLabel}>
+                  Current Mining Address
+                </span>
+                {miningStatus?.miningAddress &&
+                  wallet?.address &&
+                  miningStatus.miningAddress === wallet.address && (
+                    <span className={styles.addressMatchBadge}>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                      </svg>
+                      Rewards to your wallet
+                    </span>
+                  )}
+              </div>
+              <div className={styles.miningAddressValue}>
+                {miningStatus?.miningAddress || "Not set"}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>
             <svg
@@ -756,50 +934,168 @@ export default function MiningPage() {
             </div>
 
             <div className={styles.configSection}>
-              <label className={styles.configLabel}>
-                Mining Difficulty ({difficulty})
-              </label>
+              <div className={styles.difficultyHeader}>
+                <label className={styles.configLabel}>
+                  Mining Difficulty{" "}
+                  <button
+                    className={styles.infoButton}
+                    onClick={() => setShowDifficultyInfo(!showDifficultyInfo)}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="16" x2="12" y2="12" />
+                      <line x1="12" y1="8" x2="12.01" y2="8" />
+                    </svg>
+                  </button>
+                </label>
+                <span
+                  className={`${styles.difficultyValue} ${
+                    isDifficultyChanged ? styles.difficultyChanged : ""
+                  }`}
+                >
+                  {difficulty}/8
+                </span>
+              </div>
+
+              {showDifficultyInfo && (
+                <div className={styles.difficultyInfoBox}>
+                  <h4>About Mining Difficulty</h4>
+                  <p>
+                    The mining difficulty determines how hard it is to find a
+                    valid block hash:
+                  </p>
+                  <ul>
+                    <li>
+                      <strong>Lower difficulty (1-3):</strong> Faster mining,
+                      quicker rewards, less security
+                    </li>
+                    <li>
+                      <strong>Medium difficulty (4-5):</strong> Balanced mining
+                      speed and security
+                    </li>
+                    <li>
+                      <strong>Higher difficulty (6-8):</strong> Slower mining,
+                      more secure blockchain
+                    </li>
+                  </ul>
+                  <p>
+                    Each +1 difficulty makes mining approximately 16x harder.
+                  </p>
+                </div>
+              )}
+
+              <div className={styles.difficultyPresets}>
+                <button
+                  className={`${styles.presetButton} ${
+                    difficulty <= 3 ? styles.activePreset : ""
+                  }`}
+                  onClick={() => setDifficultyPreset("easy")}
+                >
+                  Easy (2)
+                </button>
+                <button
+                  className={`${styles.presetButton} ${
+                    difficulty >= 4 && difficulty <= 5
+                      ? styles.activePreset
+                      : ""
+                  }`}
+                  onClick={() => setDifficultyPreset("medium")}
+                >
+                  Medium (4)
+                </button>
+                <button
+                  className={`${styles.presetButton} ${
+                    difficulty >= 6 ? styles.activePreset : ""
+                  }`}
+                  onClick={() => setDifficultyPreset("hard")}
+                >
+                  Hard (6)
+                </button>
+              </div>
+
               <div className={styles.difficultySliderContainer}>
                 <input
                   type="range"
                   min={1}
                   max={8}
                   value={difficulty}
-                  onChange={(e) => setDifficulty(parseInt(e.target.value))}
+                  onChange={(e) => {
+                    setDifficulty(parseInt(e.target.value));
+                    setIsDifficultyChanged(true);
+                  }}
                   className={styles.difficultySlider}
                 />
-                <div className={styles.difficultyValues}>
-                  <span>Easier (1)</span>
-                  <span>Harder (8)</span>
+                <div className={styles.difficultyLabels}>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((value) => (
+                    <div
+                      key={value}
+                      className={`${styles.difficultyLabel} ${
+                        value === difficulty ? styles.activeDifficultyLabel : ""
+                      }`}
+                      onClick={() => {
+                        setDifficulty(value);
+                        setIsDifficultyChanged(true);
+                      }}
+                    >
+                      {value}
+                    </div>
+                  ))}
                 </div>
               </div>
+
+              <div className={styles.difficultyHints}>
+                <span>Faster Mining</span>
+                <span>Increased Security</span>
+              </div>
+
+              <div className={styles.difficultyEstimate}>
+                <div className={styles.estimateIcon}>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                </div>
+                <span>
+                  Estimated mining time:{" "}
+                  {difficulty <= 3
+                    ? "Seconds"
+                    : difficulty <= 5
+                    ? "Minutes"
+                    : "Hours+"}
+                </span>
+              </div>
+
               <div className={styles.difficultyButtonContainer}>
                 <button
                   onClick={handleSetDifficulty}
-                  disabled={isLoading}
-                  className={styles.setButton}
+                  disabled={isLoading || !isDifficultyChanged}
+                  className={`${styles.setButton} ${
+                    isDifficultyChanged ? styles.changedButton : ""
+                  }`}
                 >
                   Apply Difficulty
                 </button>
               </div>
-              <p className={styles.inputHelp}>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="16" x2="12" y2="12" />
-                  <line x1="12" y1="8" x2="12.01" y2="8" />
-                </svg>
-                Higher difficulty = slower mining but more secure blockchain
-              </p>
             </div>
           </div>
         </div>
@@ -827,9 +1123,9 @@ export default function MiningPage() {
             <div className={styles.mineBlockSection}>
               <p className={styles.mineBlockDescription}>
                 This is for testing purposes. Mining a single block will
-                generate new coins to the configured mining address. It's a good
-                way to test your mining setup without running the continuous
-                mining process.
+                generate new coins to the configured mining address. It is a
+                good way to test your mining setup without running the
+                continuous mining process.
               </p>
               <button
                 onClick={handleMineBlock}
@@ -959,6 +1255,115 @@ export default function MiningPage() {
                     {JSON.stringify(miningResult, null, 2)}
                   </pre>
                 </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* New Mining Transactions card - spans full width */}
+        <div className={`${styles.card} ${styles.wideCard}`}>
+          <h2 className={styles.cardTitle}>
+            <svg
+              className={styles.cardTitleIcon}
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+            Mining Transactions
+          </h2>
+          <div className={styles.cardContent}>
+            {isLoading ? (
+              <div className={styles.cardLoading}>
+                <div className={styles.spinnerSmall}></div>
+                <p>Loading mining transactions...</p>
+              </div>
+            ) : miningTransactions.length === 0 ? (
+              <div className={styles.emptyStateContainer}>
+                <div className={styles.emptyStateIcon}>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="48"
+                    height="48"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                </div>
+                <p className={styles.emptyStateTitle}>No Mining Rewards Yet</p>
+                <p className={styles.emptyStateText}>
+                  Start mining or mine a block to receive mining rewards
+                </p>
+                <button
+                  onClick={loadTransactionHistory}
+                  className={styles.refreshButton}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+                  </svg>
+                  Refresh Transactions
+                </button>
+              </div>
+            ) : (
+              <div className={styles.transactionsList}>
+                <div className={styles.transactionsHeader}>
+                  <div className={styles.transactionHeaderCell}>Block</div>
+                  <div className={styles.transactionHeaderCell}>Time</div>
+                  <div className={styles.transactionHeaderCell}>To</div>
+                  <div className={styles.transactionHeaderCell}>Amount</div>
+                  <div className={styles.transactionHeaderCell}>Status</div>
+                </div>
+
+                {miningTransactions.map((tx) => (
+                  <div key={tx._id || tx.id} className={styles.transactionRow}>
+                    <div className={styles.transactionCell}>
+                      <div className={styles.blockBadge}>
+                        {tx._id?.substring(0, 6) || "N/A"}
+                      </div>
+                    </div>
+                    <div className={styles.transactionCell}>
+                      {new Date(tx.timestamp).toLocaleString()}
+                    </div>
+                    <div className={styles.transactionCell}>
+                      <div className={styles.addressContainer}>
+                        {tx.toAddress?.substring(0, 8)}...
+                        {tx.toAddress?.substring(tx.toAddress.length - 8)}
+                      </div>
+                    </div>
+                    <div className={styles.transactionCell}>
+                      <div className={styles.amountValue}>+{tx.amount} MYC</div>
+                    </div>
+                    <div className={styles.transactionCell}>
+                      <div className={styles.statusBadge}>
+                        {tx.status || "Confirmed"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
